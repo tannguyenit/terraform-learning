@@ -24,6 +24,10 @@ resource "aws_instance" "server" {
   tags = {
     Name = "Server"
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 output "public_ip" {
