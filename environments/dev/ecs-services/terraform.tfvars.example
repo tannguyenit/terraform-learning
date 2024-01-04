@@ -1,0 +1,18 @@
+# aws_region     = "us-east-2"
+# aws_access_key = ""
+# aws_secret_key = ""
+
+# All value get from output in step 1.
+# ecs_cluster_id = "arn:aws:ecs:us-east-2:773801579928:cluster/bsm-poc-dev-ecs-cluster"
+# ecs_cluster_name = "bsm-poc-dev-ecs-cluster"
+# ecs_task_execution_role_arn = "arn:aws:iam::773801579928:role/bsm-poc-dev-task-execution-role"
+# ecs_event_execution_role_arn = "arn:aws:iam::773801579928:role/bsm-poc-dev-event-task-role"
+# ecs_task_security_group_id = "sg-0701d635bfcd749da"
+# env = "dev"
+# project_name = "bsm-poc"
+# vpc_id = "vpc-06c9429803100be25"
+# vpc_subnet_ids = [
+#     "subnet-0adfb66cee0886e2f",
+#     "subnet-0f4b9a6194b648fae",
+# ]
+# alb_target_group_arn = "arn:aws:elasticloadbalancing:us-east-2:773801579928:targetgroup/bsm-poc-dev-alb-dev-tg/9acad9592b1e4ad3"
