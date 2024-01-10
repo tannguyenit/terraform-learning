@@ -62,3 +62,11 @@ variable "ecs_cluster_name" {
     type = string
     description = "(optional) describe your variable"
 }
+variable "fe_s3_bucker" {
+    type = string
+    description = "(optional) describe your variable"
+}
+variable "fe_cloudfront_id" {
+    type = string
+    description = "(optional) describe your variable"
+}

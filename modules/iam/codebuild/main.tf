@@ -35,6 +35,10 @@ data "aws_iam_policy_document" "codebuild_assume_role_policy" {
   }
 }
 
+locals {
+  s3_sub_dir = [for item in var.s3_arn : "${item}/*"]
+}
+
 # Extra policies
 data "aws_iam_policy_document" "codebuild_policies" {
   statement {
@@ -70,9 +74,17 @@ data "aws_iam_policy_document" "codebuild_policies" {
       "s3:GetBucketLocation"
     ]
 
-    resources = [
-      "arn:aws:s3:::codepipeline-*",
+    resources = concat(["arn:aws:s3:::codepipeline-*"], local.s3_sub_dir)
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:ListBucket",
     ]
+
+    resources = var.s3_arn
   }
 
   statement {
@@ -108,6 +120,18 @@ data "aws_iam_policy_document" "codebuild_policies" {
 
     resources = [
       "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:report-group/*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "cloudfront:CreateInvalidation",
+    ]
+
+    resources = [
+      "*"
     ]
   }
 }
