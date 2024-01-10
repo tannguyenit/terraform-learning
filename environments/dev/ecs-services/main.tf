@@ -33,9 +33,8 @@ data "aws_lb" "main" {
   name = "${var.project_name}-${var.env}-alb"
 }
 
-data "aws_service_discovery_dns_namespace" "main" {
+data "aws_service_discovery_http_namespace" "main" {
   name = "poc.local"
-  type = "DNS_PRIVATE"
 }
 
 data "aws_codestarconnections_connection" "main" {
@@ -56,7 +55,7 @@ module "codepipeline-iam" {
 }
 
 resource "aws_s3_bucket" "code_pipeline" {
-  bucket = "codepipeline-${var.project_name}-${var.env}"
+  bucket        = "codepipeline-${var.project_name}-${var.env}"
   force_destroy = true
 
   tags = {
@@ -85,18 +84,30 @@ module "gateway-service" {
     # Data value
     cluster_arn                    = data.aws_ecs_cluster.main.arn
     cluster_name                   = data.aws_ecs_cluster.main.cluster_name
-    service_discovery_namespace_id = data.aws_service_discovery_dns_namespace.main.id
+    service_discovery_namespace_id = data.aws_service_discovery_http_namespace.main.arn
     # Variable value
     task_execution_role_arn = var.ecs_task_execution_role_arn
+    task_role_arn           = var.ecs_task_role_arn
     task_security_group_id  = var.ecs_task_security_group_id
     vpc_subnet_ids          = var.vpc_subnet_ids
     alb_target_group_arn    = var.alb_target_group_arn
     # raw value
-    service_name       = "gateway-svc"
-    app_port           = 80
-    fargate_cpu        = 256
-    fargate_memory     = 512
-    app_container_name = local.task_container_name
+    service_name   = "gateway-svc"
+    app_port       = 80
+    fargate_cpu    = 256
+    fargate_memory = 512
+    container = {
+      name = "app"
+      health_check = {
+        command = [
+          "CMD-SHELL",
+          "curl -f http://localhost/health || exit 1"
+        ]
+        interval    = 30
+        retries     = 2
+        startPeriod = 0
+      }
+    }
   }
 
   codepipeline = {
@@ -113,20 +124,20 @@ module "gateway-service" {
   }
 }
 
-module "user-service-event" {
-  source = "../../../modules/eventRule"
-  schedule_name = "send-mail-to-lender"
-  schedule_desc = "send email to lender if not have logo"
-  schedule_expression = "rate(12 hours)"
-  ecs_command_overrides = ["/usr/local/bin/node", "cronjob.js"]
-  ecs_cluster_arn = data.aws_ecs_cluster.main.arn
-  execution_role_arn = var.ecs_event_execution_role_arn
-  ecs_service_name = module.user-service.service_name
-  ecs_container_name = local.task_container_name
-  vpc_subnets = var.vpc_subnet_ids
-  vpc_security_groups = [var.ecs_task_security_group_id]
-  ecs_task_definition_arn = module.user-service.task_definition_arn_without_revision
-}
+# module "user-service-event" {
+#   source = "../../../modules/eventRule"
+#   schedule_name = "send-mail-to-lender"
+#   schedule_desc = "send email to lender if not have logo"
+#   schedule_expression = "rate(12 hours)"
+#   ecs_command_overrides = ["/usr/local/bin/node", "cronjob.js"]
+#   ecs_cluster_arn = data.aws_ecs_cluster.main.arn
+#   execution_role_arn = var.ecs_event_execution_role_arn
+#   ecs_service_name = module.user-service.service_name
+#   ecs_container_name = local.task_container_name
+#   vpc_subnets = var.vpc_subnet_ids
+#   vpc_security_groups = [var.ecs_task_security_group_id]
+#   ecs_task_definition_arn = module.user-service.task_definition_arn_without_revision
+# }
 
 module "user-service" {
   source       = "./service"
@@ -143,18 +154,30 @@ module "user-service" {
     # Data value
     cluster_arn                    = data.aws_ecs_cluster.main.arn
     cluster_name                   = data.aws_ecs_cluster.main.cluster_name
-    service_discovery_namespace_id = data.aws_service_discovery_dns_namespace.main.id
+    service_discovery_namespace_id = data.aws_service_discovery_http_namespace.main.arn
     # Variable value
     task_execution_role_arn = var.ecs_task_execution_role_arn
+    task_role_arn           = var.ecs_task_role_arn
     task_security_group_id  = var.ecs_task_security_group_id
     vpc_subnet_ids          = var.vpc_subnet_ids
     alb_target_group_arn    = ""
     # raw value
-    service_name       = "user-svc"
-    app_port           = 80
-    fargate_cpu        = 256
-    fargate_memory     = 512
-    app_container_name = local.task_container_name
+    service_name   = "user-svc"
+    app_port       = 80
+    fargate_cpu    = 256
+    fargate_memory = 512
+    container = {
+      name = "app"
+      health_check = {
+        command = [
+          "CMD-SHELL",
+          "curl -f http://localhost/health || exit 1"
+        ]
+        interval    = 30
+        retries     = 2
+        startPeriod = 0
+      }
+    }
   }
 
   codepipeline = {
@@ -165,7 +188,6 @@ module "user-service" {
     repository_id     = "tannguyenbsm/poc-user-svc"
     repository_branch = "dev"
   }
-
   autoscaling = {
     max_capacity = 3
     min_capacity = 1

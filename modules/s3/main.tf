@@ -42,7 +42,7 @@ resource "aws_s3_bucket_policy" "allow_access_from_cloudfront" {
 
 data "aws_iam_policy_document" "s3_policy" {
   statement {
-        actions   = ["s3:GetObject", "s3:PutBucketPolicy"]
+        actions   = ["s3:GetObject"]
         resources = ["${aws_s3_bucket.bucket.arn}/*"]
         principals {
             type        = "AWS"

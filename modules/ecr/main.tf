@@ -12,12 +12,12 @@ resource "aws_ecr_repository" "main" {
   }
 }
 
-resource "aws_ecr_lifecycle_policy" "keep_tag" {
-  count      = var.keep_tag_image_count > 0 ? 1 : 0
+resource "aws_ecr_lifecycle_policy" "main" {
   repository = aws_ecr_repository.main.name
 
   policy = jsonencode({
-    rules = [{
+    rules = [
+      {
       rulePriority = 1
       description  = "keep last ${var.keep_tag_image_count} images"
       action = {
@@ -29,16 +29,8 @@ resource "aws_ecr_lifecycle_policy" "keep_tag" {
         countType     = "imageCountMoreThan"
         countNumber   = var.keep_tag_image_count
       }
-    }]
-  })
-}
-
-resource "aws_ecr_lifecycle_policy" "keep_untag" {
-  count      = var.expired_image_days > 0 ? 1 : 0
-  repository = aws_ecr_repository.main.name
-
-  policy = jsonencode({
-    rules = [{
+    },
+    {
       rulePriority = 2
       description  = "Expire images older than ${var.expired_image_days} days"
       action = {
@@ -50,6 +42,7 @@ resource "aws_ecr_lifecycle_policy" "keep_untag" {
         countUnit   = "days"
         countNumber = var.expired_image_days
       }
-    }]
+    }
+    ]
   })
 }

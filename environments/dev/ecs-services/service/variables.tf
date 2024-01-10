@@ -40,13 +40,22 @@ variable "ecs" {
     service_name                   = string
     service_discovery_namespace_id = string
     task_execution_role_arn        = string
+    task_role_arn                  = string
     task_security_group_id         = string
     vpc_subnet_ids                 = list(string)
     alb_target_group_arn           = string
     app_port                       = number
     fargate_cpu                    = number
     fargate_memory                 = number
-    app_container_name             = optional(string)
+    container = object({
+      name = string
+      health_check = object({
+        command     = list(string)
+        interval    = number
+        retries     = number
+        startPeriod = number
+      })
+    })
   })
 
   default = {
@@ -55,13 +64,22 @@ variable "ecs" {
     service_name                   = ""
     service_discovery_namespace_id = ""
     task_execution_role_arn        = ""
+    task_role_arn                  = ""
     task_security_group_id         = ""
     vpc_subnet_ids                 = []
     alb_target_group_arn           = ""
     app_port                       = 80
     fargate_cpu                    = 256
     fargate_memory                 = 512
-    app_container_name             = "app"
+    container = {
+      name = "app"
+      health_check = {
+        command     = []
+        interval    = 5
+        retries     = 3
+        startPeriod = 0
+      }
+    }
   }
 }
 
@@ -85,11 +103,11 @@ variable "codepipeline" {
 
 variable "autoscaling" {
   type = object({
-    max_capacity             = number
-    min_capacity              = number
+    max_capacity = number
+    min_capacity = number
   })
   default = {
-    max_capacity             = 1
-    min_capacity              = 1
+    max_capacity = 1
+    min_capacity = 1
   }
 }

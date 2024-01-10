@@ -39,6 +39,10 @@ variable "ecs_task_security_group_id" {
     description = "(optional) describe your variable"
     default = ""
 }
+variable "ecs_task_role_arn" {
+    type = string
+    description = "(optional) describe your variable"
+}
 variable "ecs_cluster_id" {
     type = string
     description = "(optional) describe your variable"

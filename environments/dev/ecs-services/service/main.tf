@@ -48,28 +48,36 @@ module "code-pipeline" {
 }
 
 module "auto-scaling" {
-  source = "../../../../modules/autoscaling"
+  source               = "../../../../modules/autoscaling"
   aws_ecs_cluster_name = var.ecs.cluster_name
   aws_ecs_service_name = module.ecs-service.service_name
-  max_capacity = var.autoscaling.max_capacity
-  min_capacity = var.autoscaling.min_capacity
+  max_capacity         = var.autoscaling.max_capacity
+  min_capacity         = var.autoscaling.min_capacity
 }
 
 module "ecs-service" {
   source                      = "../../../../modules/ecs/services"
   aws_region                  = var.aws_region
   ecs_task_execution_role_arn = var.ecs.task_execution_role_arn
+  ecs_task_role_arn           = var.ecs.task_role_arn
+  enable_execute_command      = true
   ecs_task_security_group_id  = var.ecs.task_security_group_id
   ecs_cluster_id              = var.ecs.cluster_arn
   vpc_subnet_ids              = var.ecs.vpc_subnet_ids
   target_group_arn            = var.ecs.alb_target_group_arn
 
-  app_image                      = module.ecr.url
-  app_port                       = var.ecs.app_port
-  fargate_cpu                    = var.ecs.fargate_cpu
-  fargate_memory                 = var.ecs.fargate_memory
-  cloudwatch_log_group_name      = "/ecs/${var.ecs.cluster_name}/${var.ecs.service_name}"
-  container_name                 = var.ecs.app_container_name
+  app_image                 = module.ecr.url
+  app_port                  = var.ecs.app_port
+  fargate_cpu               = var.ecs.fargate_cpu
+  fargate_memory            = var.ecs.fargate_memory
+  cloudwatch_log_group_name = "/ecs/${var.ecs.cluster_name}/${var.ecs.service_name}"
+  container_name            = var.ecs.container.name
+  healthCheck = {
+    command     = var.ecs.container.health_check.command
+    interval    = var.ecs.container.health_check.interval
+    retries     = var.ecs.container.health_check.retries
+    startPeriod = var.ecs.container.health_check.startPeriod
+  }
   ecs_task_definition_family     = "${var.ecs.service_name}-td"
   ecs_service_name               = var.ecs.service_name
   service_discovery_namespace_id = var.ecs.service_discovery_namespace_id

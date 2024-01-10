@@ -26,11 +26,30 @@ variable "container_name" {
     type = string
     description = "(optional) describe your variable"
 }
+variable "healthCheck" {
+    type = object({
+      command = list(string)
+      interval = number
+      retries = number
+      startPeriod = number
+    })
+    default = {
+      command = []
+      interval = 5
+      retries = 3
+      startPeriod = 0
+    }
+    description = "(optional) describe your variable"
+}
 variable "ecs_task_definition_family" {
     type = string
     description = "(optional) describe your variable"
 }
 variable "ecs_task_execution_role_arn" {
+    type = string
+    description = "(optional) describe your variable"
+}
+variable "ecs_task_role_arn" {
     type = string
     description = "(optional) describe your variable"
 }
@@ -62,4 +81,9 @@ variable "target_group_arn" {
 variable "service_discovery_namespace_id" {
     type = string
     description = "(optional) describe your variable"
+}
+variable "enable_execute_command" {
+    type = bool
+    description = "Specifies whether to enable Amazon ECS Exec for the tasks within the service."
+    default = false
 }

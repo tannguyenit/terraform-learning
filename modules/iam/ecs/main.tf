@@ -1,4 +1,4 @@
-data "aws_iam_policy_document" "assume_role_policy" {
+data "aws_iam_policy_document" "task_assume_role_policy" {
   statement {
     actions = ["sts:AssumeRole"]
 
@@ -11,14 +11,25 @@ data "aws_iam_policy_document" "assume_role_policy" {
 
 resource "aws_iam_role" "ecsTaskExecutionRole" {
   name               = "${var.app_name}-${var.env}-task-execution-role"
-  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
+  assume_role_policy = data.aws_iam_policy_document.task_assume_role_policy.json
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role",
+    "arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess"
+  ]
   tags = {
     Name        = "${var.app_name}-iam-role"
     Environment = var.env
   }
 }
 
-resource "aws_iam_role_policy_attachment" "ecsTaskExecutionRole_policy" {
-  role       = aws_iam_role.ecsTaskExecutionRole.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+resource "aws_iam_role" "ecsTaskRole" {
+  name               = "${var.app_name}-${var.env}-task-role"
+  assume_role_policy = data.aws_iam_policy_document.task_assume_role_policy.json
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  ]
+  tags = {
+    Name        = "${var.app_name}-iam-role"
+    Environment = var.env
+  }
 }
