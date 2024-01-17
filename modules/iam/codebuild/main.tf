@@ -26,7 +26,10 @@ data "aws_iam_policy_document" "codebuild_assume_role_policy" {
 
     principals {
       type        = "Service"
-      identifiers = ["codebuild.amazonaws.com"]
+      identifiers = [
+        "codebuild.amazonaws.com",
+        "lambda.amazonaws.com",
+      ]
     }
 
     actions = [

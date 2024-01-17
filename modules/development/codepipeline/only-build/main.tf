@@ -27,10 +27,10 @@ resource "aws_codepipeline" "main" {
   }
 
   stage {
-    name = "Build_And_Invalid_Cloudfront_Cache"
+    name = var.build_stage_name_alias
 
     action {
-      name             = "Build_And_Invalid_Cloudfront_Cache"
+      name             = var.build_stage_name_alias
       category         = "Build"
       owner            = "AWS"
       provider         = "CodeBuild"

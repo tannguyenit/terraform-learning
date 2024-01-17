@@ -8,7 +8,7 @@ module "code-build" {
 }
 
 module "code-pipeline" {
-  source                     = "../../../../modules/development/codepipeline/frontend"
+  source                     = "../../../../modules/development/codepipeline/only-build"
   aws_codestar_connection    = var.codepipeline.connection_arn
   aws_region                 = var.aws_region
   aws_codebuild_project_name = module.code-build.name
@@ -17,4 +17,6 @@ module "code-pipeline" {
   artifact_store_location    = var.codepipeline.s3_artifact_store_location
   codepipeline_role_arn      = var.codepipeline.codepipeline_service_role
   codepipeline_name          = "${var.app_name}-${var.env}-codepipeline"
+  build_stage_name_alias     = var.codepipeline.build_stage_name_alias
 }
+//"Build_And_Invalid_Cloudfront_Cache"

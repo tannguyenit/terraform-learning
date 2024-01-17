@@ -77,7 +77,7 @@ variable "app_bucket_versioning" {
 
 # =============== Cerificate
 
-variable "fe_certificate_domain_name" {
+variable "webapp_domain_certificate" {
     type = string
     description = "(optional) describe your variable"
 }

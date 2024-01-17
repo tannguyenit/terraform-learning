@@ -35,3 +35,7 @@ variable "repository_branch" {
     type = string
     description = "(optional) describe your variable"
 }
+variable "build_stage_name_alias" {
+    type = string
+    description = "(optional) describe your variable"
+}

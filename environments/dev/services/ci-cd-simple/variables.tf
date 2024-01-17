@@ -36,6 +36,7 @@ variable "codepipeline" {
     repository_branch          = string
     codepipeline_service_role  = string
     s3_artifact_store_location = string
+    build_stage_name_alias     = string
   })
   default = {
     connection_arn             = ""
@@ -43,6 +44,7 @@ variable "codepipeline" {
     repository_branch          = ""
     codepipeline_service_role  = ""
     s3_artifact_store_location = ""
+    build_stage_name_alias     = "Build"
   }
   description = "(optional) describe your variable"
 }

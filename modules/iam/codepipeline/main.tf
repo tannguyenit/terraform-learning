@@ -27,7 +27,7 @@ data "aws_iam_policy_document" "code_pipeline_policies" {
   }
 
   statement {
-    actions   = ["cloudwatch:*", "s3:*", "codebuild:*", "iam:PassRole"]
+    actions   = ["cloudwatch:*", "s3:*", "codebuild:*", "iam:PassRole", "cloudfront:*"]
     resources = ["*"]
     effect    = "Allow"
   }
