@@ -7,13 +7,17 @@ resource "aws_iam_role" "service_role" {
   assume_role_policy = data.aws_iam_policy_document.codebuild_assume_role_policy.json
 }
 
-# Add extra polcies
-resource "aws_iam_role_policy" "codebuild_role_extra_policies" {
-  name   = "code_build_policy"
-  role   = aws_iam_role.service_role.name
-  policy = data.aws_iam_policy_document.codebuild_policies.json
+resource "aws_iam_policy" "main" {
+  name        = "code-build-policy"
+  path        = "/"
+  description = "Code build policy"
+  policy      = data.aws_iam_policy_document.codebuild_policies.json
 }
 
+resource "aws_iam_role_policy_attachment" "attachment_custom_policies" {
+  policy_arn = aws_iam_policy.main.arn
+  role       = aws_iam_role.service_role.id
+}
 
 ####################
 # Policy documents #
@@ -29,6 +33,7 @@ data "aws_iam_policy_document" "codebuild_assume_role_policy" {
       identifiers = [
         "codebuild.amazonaws.com",
         "lambda.amazonaws.com",
+        "logs.amazonaws.com",
       ]
     }
 
@@ -58,11 +63,13 @@ data "aws_iam_policy_document" "codebuild_policies" {
     actions = [
       "logs:CreateLogGroup",
       "logs:CreateLogStream",
+      "logs:TagResource",
       "logs:PutLogEvents",
     ]
 
     resources = [
       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/*",
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*",
     ]
   }
 
@@ -87,7 +94,7 @@ data "aws_iam_policy_document" "codebuild_policies" {
       "s3:ListBucket",
     ]
 
-    resources = var.s3_arn
+    resources = length(var.s3_arn) > 0 ? var.s3_arn : ["arn:aws:s3:::*"]
   }
 
   statement {
@@ -135,6 +142,69 @@ data "aws_iam_policy_document" "codebuild_policies" {
 
     resources = [
       "*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "iam:PassRole",
+    ]
+
+    resources = var.iam_pass_role
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+        "cloudformation:CreateChangeSet",
+        "cloudformation:CreateStack",
+        "cloudformation:DeleteChangeSet",
+        "cloudformation:DeleteStack",
+        "cloudformation:DescribeChangeSet",
+        "cloudformation:DescribeStackEvents",
+        "cloudformation:DescribeStackResource",
+        "cloudformation:DescribeStackResources",
+        "cloudformation:DescribeStacks",
+        "cloudformation:ExecuteChangeSet",
+        "cloudformation:ListStackResources",
+        "cloudformation:SetStackPolicy",
+        "cloudformation:UpdateStack",
+        "cloudformation:UpdateTerminationProtection",
+        "cloudformation:GetTemplate",
+        "cloudformation:ValidateTemplate"
+    ]
+
+    resources = [
+      "*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+        "lambda:Get*",
+				"lambda:List*",
+				"lambda:CreateFunction",
+				"lambda:DeleteFunction",
+				"lambda:CreateFunction",
+				"lambda:DeleteFunction",
+				"lambda:UpdateFunctionConfiguration",
+				"lambda:UpdateFunctionCode",
+				"lambda:PublishVersion",
+				"lambda:CreateAlias",
+				"lambda:DeleteAlias",
+				"lambda:UpdateAlias",
+				"lambda:AddPermission",
+				"lambda:RemovePermission",
+				"lambda:InvokeFunction"
+    ]
+
+    resources = [
+      "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:*"
     ]
   }
 }

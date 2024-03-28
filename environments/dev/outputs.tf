@@ -12,7 +12,7 @@ output "ecs_service" {
         # ecs_task_security_group_id = module.security_group.ecs_container_security_group_id
         # alb_target_group_arn = module.alb.alb_target_group_id
         # ecs_event_execution_role_arn = module.ecs_event.excution_role_arn
-        webapp_s3_bucker = var.webapp_domain_certificate
-        webapp_cloudfront_id = module.webapp_cloudfront.id
+        # webapp_s3_bucker = var.webapp_domain_certificate
+        # webapp_cloudfront_id = module.webapp_cloudfront.id
     }
 }

@@ -33,8 +33,30 @@ provider "aws" {
 # ============ Connection ==============
 module "connection" {
   source = "../../modules/development/connection"
-  name = "Github Connection"
-  type = "GitHub"
+  name   = "Github Connection"
+  type   = "GitHub"
+}
+
+# ============ IAM ===============
+module "codebuild_iam" {
+  source = "../../modules/iam/codebuild"
+  name   = var.project_name
+  env    = var.env
+  s3_arn = []
+  iam_pass_role = [module.lambda_iam.arn]
+}
+
+module "codepipeline_iam" {
+  source          = "../../modules/iam/codepipeline"
+  name            = var.project_name
+  env             = var.env
+}
+
+module "lambda_iam" {
+  source          = "../../modules/iam/lambda"
+  name            = var.project_name
+  env             = var.env
+  s3_arn = [module.app_s3.arn]
 }
 
 # ============ Front end ===============
@@ -43,99 +65,98 @@ data "aws_route53_zone" "selected" {
   private_zone = var.route53_private_zone
 }
 
-module "webapp_s3" {
-  source                                    = "../../modules/s3"
-  bucket_name                               = var.webapp_domain_certificate
-  cloudfront_origin_access_identity_iam_arn = module.webapp_origin_access_identity.cloudfront_access_identity_iam_arn
-}
-
-module "webapp_origin_access_identity" {
-  source                         = "../../modules/cloudfront/origin_access_identity"
-  origin_access_identity_comment = var.bucket
-}
-
-module "webapp_cloudfront_cert" {
-  source                  = "../../modules/certificate"
-  route53_hosted_zone     = var.route53_hosted_zone
-  route53_zone_id         = data.aws_route53_zone.selected.id
-  certificate_domain_name = var.webapp_domain_certificate
-
-  providers = {
-    aws = aws.cert
-  }
-}
-
-module "webapp_cloudfront" {
-  source                          = "../../modules/cloudfront"
-  bucket_regional_domain_name     = module.webapp_s3.bucket_regional_domain_name
-  alternate_domain_names          = [var.webapp_domain_certificate]
-  is_webapp_distribution          = true
-  cloudfront_access_identity_path = module.webapp_origin_access_identity.cloudfront_access_identity_path
-  acm_certificate_arn             = module.webapp_cloudfront_cert.acm_certificate_arn
-  ssl_support_method              = var.ssl_support_method
-}
-
-module "webapp_route53" {
-  source          = "../../modules/route53"
-  domain_name     = var.webapp_domain_certificate
-  route53_zone_id = data.aws_route53_zone.selected.id
-  alias_name      = module.webapp_cloudfront.domain_name
-  alias_zone_id   = module.webapp_cloudfront.hosted_zone_id
-}
-
-# ==================== End front end ====================
-
-# # ==================== Start backend ====================
-
-locals {
-  bucket_name    = "bucket-${var.project_name}-${var.env}"
-  vpc_cidr_block = "10.0.0.0/16"
-}
-
-# module "app_origin_access_identity" {
-#   source                         = "../../modules/cloudfront/origin_access_identity"
-#   origin_access_identity_comment = "bucket-${var.project_name}-app-${var.env}"
-# }
-
-# module "app_s3" {
+# module "webapp_s3" {
 #   source                                    = "../../modules/s3"
-#   versioning                                = var.app_bucket_versioning
-#   bucket_name                               = local.bucket_name
-#   cloudfront_origin_access_identity_iam_arn = module.app_origin_access_identity.cloudfront_access_identity_iam_arn
+#   bucket_name                               = var.webapp_domain_certificate
+#   cloudfront_origin_access_identity_iam_arn = module.webapp_origin_access_identity.cloudfront_access_identity_iam_arn
 # }
 
-# module "s3_cloudfront_cert" {
+# module "webapp_origin_access_identity" {
+#   source                         = "../../modules/cloudfront/origin_access_identity"
+#   origin_access_identity_comment = var.bucket
+# }
+
+# module "webapp_cloudfront_cert" {
 #   source                  = "../../modules/certificate"
 #   route53_hosted_zone     = var.route53_hosted_zone
 #   route53_zone_id         = data.aws_route53_zone.selected.id
-#   certificate_domain_name = var.app_certificate_domain_name
+#   certificate_domain_name = var.webapp_domain_certificate
 
 #   providers = {
 #     aws = aws.cert
 #   }
 # }
 
-# module "asset_route53" {
-#   source          = "../../modules/route53"
-#   domain_name     = var.app_certificate_domain_name
-#   route53_zone_id = data.aws_route53_zone.selected.id
-#   alias_name      = module.app_cloudfront.s3_domain_name
-#   alias_zone_id   = module.app_cloudfront.s3_hosted_zone_id
+# module "webapp_cloudfront" {
+#   source                          = "../../modules/cloudfront"
+#   bucket_regional_domain_name     = module.webapp_s3.bucket_regional_domain_name
+#   alternate_domain_names          = [var.webapp_domain_certificate]
+#   is_webapp_distribution          = true
+#   cloudfront_access_identity_path = module.webapp_origin_access_identity.cloudfront_access_identity_path
+#   acm_certificate_arn             = module.webapp_cloudfront_cert.acm_certificate_arn
+#   ssl_support_method              = var.ssl_support_method
 # }
 
-# module "app_cloudfront" {
-#   source                          = "../../modules/cloudfront"
-#   bucket_regional_domain_name     = module.app_s3.bucket_regional_domain_name
-#   alternate_domain_names          = [var.app_certificate_domain_name]
-#   origin_shield_region            = var.aws_region
-#   lambda_name                     = "lambda-edge-functions-dev-origin-response-function"
-#   cloudfront_function_name        = "demo"
-#   header_secret                   = "SECRET_KEY"
-#   is_webapp_distribution              = false
-#   cloudfront_access_identity_path = module.app_origin_access_identity.cloudfront_access_identity_path
-#   ssl_support_method              = var.ssl_support_method
-#   acm_certificate_arn             = module.s3_cloudfront_cert.acm_certificate_arn
+# module "webapp_route53" {
+#   source          = "../../modules/route53"
+#   domain_name     = var.webapp_domain_certificate
+#   route53_zone_id = data.aws_route53_zone.selected.id
+#   alias_name      = module.webapp_cloudfront.domain_name
+#   alias_zone_id   = module.webapp_cloudfront.hosted_zone_id
 # }
+
+# ==================== End front end ====================
+
+# # ==================== Start backend ====================
+locals {
+  bucket_name    = "bucket-${var.project_name}-${var.env}"
+  vpc_cidr_block = "10.0.0.0/16"
+}
+
+module "app_origin_access_identity" {
+  source                         = "../../modules/cloudfront/origin_access_identity"
+  origin_access_identity_comment = "bucket-${var.project_name}-app-${var.env}"
+}
+
+module "app_s3" {
+  source                                    = "../../modules/s3"
+  versioning                                = var.app_bucket_versioning
+  bucket_name                               = local.bucket_name
+  cloudfront_origin_access_identity_iam_arn = module.app_origin_access_identity.cloudfront_access_identity_iam_arn
+}
+
+module "s3_cloudfront_cert" {
+  source                  = "../../modules/certificate"
+  route53_hosted_zone     = var.route53_hosted_zone
+  route53_zone_id         = data.aws_route53_zone.selected.id
+  certificate_domain_name = var.app_certificate_domain_name
+
+  providers = {
+    aws = aws.cert
+  }
+}
+
+module "cdn_route53" {
+  source          = "../../modules/route53"
+  domain_name     = var.app_certificate_domain_name
+  route53_zone_id = data.aws_route53_zone.selected.id
+  alias_name      = module.app_cloudfront.s3_domain_name
+  alias_zone_id   = module.app_cloudfront.s3_hosted_zone_id
+}
+
+module "app_cloudfront" {
+  source                          = "../../modules/cloudfront"
+  bucket_regional_domain_name     = module.app_s3.bucket_regional_domain_name
+  alternate_domain_names          = [var.app_certificate_domain_name]
+  origin_shield_region            = var.aws_region
+  lambda_function_name            = "lambda-edge-functions-dev-origin-response-function"
+  cloudfront_function_name        = "demo"
+  header_secret                   = "SECRET_KEY"
+  is_webapp_distribution          = false
+  cloudfront_access_identity_path = module.app_origin_access_identity.cloudfront_access_identity_path
+  ssl_support_method              = var.ssl_support_method
+  acm_certificate_arn             = module.s3_cloudfront_cert.acm_certificate_arn
+}
 
 # module "sqs" {
 #   source     = "../../modules/sqs/fifo"

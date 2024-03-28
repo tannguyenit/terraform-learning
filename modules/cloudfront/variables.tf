@@ -33,7 +33,7 @@ variable "origin_shield_region" {
     description = "AWS Region for Origin Shield"
     default = "us-east-2"
 }
-variable "lambda_name" {
+variable "lambda_function_name" {
     type = string
     description = "lambda function name"
     default = ""

@@ -5,8 +5,8 @@ locals {
 }
 
 data "aws_lambda_function_url" "main" {
-  count = var.lambda_name != "" ? 1 : 0
-  function_name = var.lambda_name
+  count = var.lambda_function_name != "" ? 1 : 0
+  function_name = var.lambda_function_name
 }
 
 data "aws_cloudfront_function" "main" {

@@ -42,16 +42,14 @@ resource "aws_s3_bucket_policy" "allow_access_from_cloudfront" {
 
 data "aws_iam_policy_document" "s3_policy" {
   statement {
-        actions   = ["s3:GetObject"]
-        resources = ["${aws_s3_bucket.bucket.arn}/*"]
-        principals {
-            type        = "AWS"
-            identifiers = [var.cloudfront_origin_access_identity_iam_arn]
-        }
-    }
-    statement {
-        actions   = ["s3:ListBucket"]
-        resources = ["${aws_s3_bucket.bucket.arn}"]
+        actions   = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        resources = [
+          "${aws_s3_bucket.bucket.arn}",
+          "${aws_s3_bucket.bucket.arn}/*"
+        ]
         principals {
             type        = "AWS"
             identifiers = [var.cloudfront_origin_access_identity_iam_arn]

@@ -41,22 +41,20 @@ data "aws_codestarconnections_connection" "main" {
   name = "Github Connection"
 }
 
-data "aws_s3_bucket" "fe_s3" {
-  bucket = var.webapp_s3_bucker
+# data "aws_s3_bucket" "fe_s3" {
+#   bucket = var.webapp_s3_bucker
+# }
+
+data "aws_iam_role" "codebuild_iam" {
+  name = "codebuild-${var.project_name}-${var.env}-service-role"
 }
 
-module "codebuild_iam" {
-  source = "../../../modules/iam/codebuild"
-  name   = var.project_name
-  env    = var.env
-  s3_arn = [data.aws_s3_bucket.fe_s3.arn]
+data "aws_iam_role" "codepipeline_iam" {
+  name = "codepipeline-${var.project_name}-${var.env}-service-role"
 }
 
-module "codepipeline_iam" {
-  source          = "../../../modules/iam/codepipeline"
-  name            = var.project_name
-  env             = var.env
-  # ecs_cluster_arn = data.aws_ecs_cluster.main.arn
+data "aws_iam_role" "lambda_iam" {
+  name = "lambda-${var.project_name}-${var.env}-service-role"
 }
 
 resource "aws_s3_bucket" "code_pipeline" {
@@ -69,39 +67,39 @@ resource "aws_s3_bucket" "code_pipeline" {
   }
 }
 
-module "webapp-ci-cd" {
-  source = "./ci-cd-simple"
-  app_name = "poc-fe"
-  env = var.env
-  aws_region = var.aws_region
-  codebuild_config = {
-    buildspec              = "deployment/buildspec.yml"
-    codebuild_service_role = module.codebuild_iam.arn
-    codebuild_env = [
-      {
-        name  = "API_BASE_URL"
-        value = "https://api.bsm-poc.tannguyenit.dev"
-      },
-      {
-        name  = "S3_BUCKET"
-        value = var.webapp_s3_bucker
-      },
-      {
-        name  = "CLOUDFRONT_DISTRIBUTION_ID"
-        value = var.webapp_cloudfront_id
-      }
-    ]
-  }
-  codepipeline = {
-    connection_arn             = data.aws_codestarconnections_connection.main.arn
-    codepipeline_service_role  = module.codepipeline_iam.arn
-    s3_artifact_store_location = aws_s3_bucket.code_pipeline.id
-    build_stage_name_alias = "Build_and_clear_cache_cloudfront"
-    # raw value
-    repository_id     = "tannguyenbsm/poc-frontend"
-    repository_branch = "dev"
-  }
-}
+# module "webapp-ci-cd" {
+#   source = "./ci-cd-simple"
+#   app_name = "poc-fe"
+#   env = var.env
+#   aws_region = var.aws_region
+#   codebuild_config = {
+#     buildspec              = "deployment/buildspec.yml"
+#     codebuild_service_role = data.aws_iam_role.codebuild_iam.arn
+#     codebuild_env = [
+#       {
+#         name  = "API_BASE_URL"
+#         value = "https://api.bsm-poc.tannguyenit.dev"
+#       },
+#       {
+#         name  = "S3_BUCKET"
+#         value = var.webapp_s3_bucker
+#       },
+#       {
+#         name  = "CLOUDFRONT_DISTRIBUTION_ID"
+#         value = var.webapp_cloudfront_id
+#       }
+#     ]
+#   }
+#   codepipeline = {
+#     connection_arn             = data.aws_codestarconnections_connection.main.arn
+#     codepipeline_service_role  = data.aws_iam_role.codepipeline_iam.arn
+#     s3_artifact_store_location = aws_s3_bucket.code_pipeline.id
+#     build_stage_name_alias = "Build_and_clear_cache_cloudfront"
+#     # raw value
+#     repository_id     = "tannguyenbsm/poc-frontend"
+#     repository_branch = "dev"
+#   }
+# }
 
 module "lambda-ci-cd" {
   source = "./ci-cd-simple"
@@ -110,11 +108,11 @@ module "lambda-ci-cd" {
   aws_region = var.aws_region
   codebuild_config = {
     buildspec              = "deployment/buildspec.yml"
-    codebuild_service_role = module.codebuild_iam.arn
+    codebuild_service_role = data.aws_iam_role.codebuild_iam.arn
     codebuild_env = [
       {
         name  = "ROLE_ARN"
-        value = "arn:aws:iam::773801579928:role/lambda-access-s3-tan-tao"
+        value = data.aws_iam_role.lambda_iam.arn
       },
       {
         name  = "S3_ORIGINAL_IMAGE_BUCKET"
@@ -140,7 +138,7 @@ module "lambda-ci-cd" {
   }
   codepipeline = {
     connection_arn             = data.aws_codestarconnections_connection.main.arn
-    codepipeline_service_role  = module.codepipeline_iam.arn
+    codepipeline_service_role  = data.aws_iam_role.codepipeline_iam.arn
     s3_artifact_store_location = aws_s3_bucket.code_pipeline.id
     build_stage_name_alias = "Build_and_deploy_lambd_function"
     # raw value
@@ -157,7 +155,7 @@ module "lambda-ci-cd" {
 #   project_name = var.project_name
 #   codebuild_config = {
 #     buildspec              = "deployment/buildspec.yml"
-#     codebuild_service_role = module.codebuild_iam.arn
+#     codebuild_service_role = data.aws_iam_role.codebuild_iam.arn
 #     codebuild_env = [
 #       {
 #         name  = "USER_SERVICE_API_BASE"
@@ -197,7 +195,7 @@ module "lambda-ci-cd" {
 
 #   codepipeline = {
 #     connection_arn             = data.aws_codestarconnections_connection.main.arn
-#     codepipeline_service_role  = module.codepipeline_iam.arn
+#     codepipeline_service_role  = data.aws_iam_role.codepipeline_iam.arn
 #     s3_artifact_store_location = aws_s3_bucket.code_pipeline.id
 #     # raw value
 #     repository_id     = "tannguyenbsm/poc-api-gw"
@@ -232,7 +230,7 @@ module "lambda-ci-cd" {
 #   project_name = var.project_name
 #   codebuild_config = {
 #     buildspec              = "deployment/buildspec.yml"
-#     codebuild_service_role = module.codebuild_iam.arn
+#     codebuild_service_role = data.aws_iam_role.codebuild_iam.arn
 #     codebuild_env          = []
 #   }
 #   ecs = {
@@ -267,7 +265,7 @@ module "lambda-ci-cd" {
 
 #   codepipeline = {
 #     connection_arn             = data.aws_codestarconnections_connection.main.arn
-#     codepipeline_service_role  = module.codepipeline_iam.arn
+#     codepipeline_service_role  = data.aws_iam_role.codepipeline_iam.arn
 #     s3_artifact_store_location = aws_s3_bucket.code_pipeline.id
 #     # raw value
 #     repository_id     = "tannguyenbsm/poc-user-svc"

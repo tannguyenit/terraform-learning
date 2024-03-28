@@ -11,8 +11,3 @@ variable "s3_arn" {
     description = "(optional) describe your variable"
     default = []
 }
-variable "iam_pass_role" {
-    type = list(string)
-    description = "(optional) describe your variable"
-    default = []
-}
